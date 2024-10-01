@@ -4,15 +4,16 @@ setlocal enabledelayedexpansion
 goto START
 ****************************************************************************************************
 *
-*  Source:  Adm\Tools\Batch File - TimeStamp Local Archive\archive_local (SOURCE - COPY AND EDIT).bat
-*  Version: 2024-09-19
+*  Source Repository (GitHub):  CWNathan\DesktopUtilities
+*  Filepath and name: \FileSystemUtilities\archive_local_COPY AND EDIT.bat
+*  Version: 2024-10-01
 *
 *  When configured for a specific file, this utility copies the file to a subdirectory in the
 *  directory named "Arc" and then adds a timestamp suffix to the file name.
 *  
 *  Configuration isntructions:
-*    Line [29] below: Edit the value of fname_base to match the filename (without extension) to be backed up
-*    Line [30] below: Edit the value of fname_ext to match the filename extension (without period) to be backed up
+*    Line [30] below: Edit the value of fname_base to match the filename (without extension) to be backed up
+*    Line [31] below: Edit the value of fname_ext to match the filename extension (without period) to be backed up
 *
 *  Example:
 *    set "fname_base=Daily Task List"
