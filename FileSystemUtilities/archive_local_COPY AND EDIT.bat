@@ -11,7 +11,7 @@ goto START
 *  When configured for a specific file, this utility copies the file to a subdirectory in the
 *  directory named "Arc" and then adds a timestamp suffix to the file name.
 *  
-*  Configuration isntructions:
+*  Configuration instructions:
 *    Line [30] below: Edit the value of fname_base to match the filename (without extension) to be backed up
 *    Line [31] below: Edit the value of fname_ext to match the filename extension (without period) to be backed up
 *
