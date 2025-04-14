@@ -30,6 +30,12 @@ REM ----- CHANGE WITH EVERY INSTANCE: File Information -----
 set "fname_base=archive_local (SOURCE - COPY AND EDIT)"
 set "fname_ext=bat"
 
+REM ----- CHANGE IF BATCH FILE IS CALLED IN A SHELL    -----
+REM ----- WITH A CURRENT DIRECTORY DIFFERENT THAN      -----
+REM ----- THE ONE WHERE THE FILE IS STORED             -----
+
+set "cd=%cd%"
+
 REM ----- CHANGE RARELY: Archive directory standard name -----
 
 set "STANDARD_ARCHIVE_DIRECTORY_NAME=Arc"
