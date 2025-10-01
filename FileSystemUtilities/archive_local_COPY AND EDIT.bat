@@ -46,7 +46,6 @@ set "BACKUP_SUFFIX=RO"
 REM Later in code:
 set "time_stamped_filename=%fname_base%_%datepretty% %BACKUP_SUFFIX%.%fname_ext%"
 
-
 REM ----- CHANGE NEVER: Assign Working Variables -----
 
 set "fname=%fname_base%.%fname_ext%"
@@ -73,7 +72,6 @@ if not exist "%target_dir%" (
 )
 
 REM ----- Verify copy the file to the archive directory. -----
-REM copy "%source_dir%%fname%" "%target_dir%%fname%" /V | find "SILENT"  REM NOTE - Cline recommended
 copy "%source_dir%%fname%" "%target_dir%%fname%" /V >nul 2>&1
 if errorlevel 1 (
    	echo.
@@ -81,7 +79,6 @@ if errorlevel 1 (
    	echo.
     goto ENDPAUSE
 )
-
 
 REM ----- Use PowerShell to get the file's last modified timestamp (Windows 11 compatible replacement for WMIC) -----
 for /f "delims=" %%A in ('powershell -Command "(Get-Item '%target_dir%%fname%').LastWriteTime.ToString('yyyyMMddHHmm')"') do (
