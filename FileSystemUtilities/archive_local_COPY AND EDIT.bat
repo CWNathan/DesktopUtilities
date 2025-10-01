@@ -12,8 +12,8 @@ goto START
 *  directory named "Arc" and then adds a timestamp suffix to the file name.
 *  
 *  Configuration instructions:
-*    Line [30] below: Edit the value of fname_base to match the filename (without extension) to be backed up
-*    Line [31] below: Edit the value of fname_ext to match the filename extension (without period) to be backed up
+*    Line 30 below: Edit the value of fname_base to match the filename (without extension) to be backed up
+*    Line 31 below: Edit the value of fname_ext to match the filename extension (without period) to be backed up
 *
 *  Example:
 *    set "fname_base=Daily Task List"
@@ -30,21 +30,28 @@ REM ----- CHANGE WITH EVERY INSTANCE: File Information -----
 set "fname_base=archive_local (SOURCE - COPY AND EDIT)"
 set "fname_ext=bat"
 
-REM ----- CHANGE IF BATCH FILE IS CALLED IN A SHELL    -----
-REM ----- WITH A CURRENT DIRECTORY DIFFERENT THAN      -----
-REM ----- THE ONE WHERE THE FILE IS STORED             -----
+REM ----- SET working_dir VALUE DIRECTLY WHEN BATCH FILE  -----
+REM ----- IS CALLED IN A SHELL WITH A CURRENT DIRECTORY   -----
+REM ----- DIFFERENT THAN THE ONE WHERE THE FILE IS STORED -----
 
-set "cd=%cd%"
+set "working_dir=%cd%"
 
 REM ----- CHANGE RARELY: Archive directory standard name -----
 
 set "STANDARD_ARCHIVE_DIRECTORY_NAME=Arc"
 
+REM ----- CHANGE RARELY: Archive file suffix ="RO" for Read Only -----
+set "BACKUP_SUFFIX=RO"
+
+REM Later in code:
+set "time_stamped_filename=%fname_base%_%datepretty% %BACKUP_SUFFIX%.%fname_ext%"
+
+
 REM ----- CHANGE NEVER: Assign Working Variables -----
 
 set "fname=%fname_base%.%fname_ext%"
-set "source_dir=%cd%\"
-set "target_dir=%cd%\%STANDARD_ARCHIVE_DIRECTORY_NAME%\"
+set "source_dir=%working_dir%\"
+set "target_dir=%working_dir%\%STANDARD_ARCHIVE_DIRECTORY_NAME%\"
 
 REM ----- Verify the batch file has been correctly modified
 if "%fname_base%"=="[ENTER FILENAME HERE]" (goto ERROR_SETUP_REQUIRED)
@@ -57,22 +64,58 @@ REM ----- Make the archive directory if it does not already exist.  -----
 if not exist "%target_dir%" (
 	echo Directory "%target_dir%" does not exist. Creating it now...
 	mkdir "%target_dir%"
+	if errorlevel 1 (
+	   	echo.
+    	echo ERROR: Failed to create archive directory "%target_dir%"
+	   	echo.
+    	goto ENDPAUSE
+	)
 )
 
 REM ----- Verify copy the file to the archive directory. -----
-copy "%source_dir%%fname%" "%target_dir%%fname%" /V | find "SILENT"
+REM copy "%source_dir%%fname%" "%target_dir%%fname%" /V | find "SILENT"  REM NOTE - Cline recommended
+copy "%source_dir%%fname%" "%target_dir%%fname%" /V >nul 2>&1
+if errorlevel 1 (
+   	echo.
+    echo ERROR: Failed to copy file "%source_dir%%fname%" to archive directory "%target_dir%%fname%"
+   	echo.
+    goto ENDPAUSE
+)
+
 
 REM ----- Use PowerShell to get the file's last modified timestamp (Windows 11 compatible replacement for WMIC) -----
 for /f "delims=" %%A in ('powershell -Command "(Get-Item '%target_dir%%fname%').LastWriteTime.ToString('yyyyMMddHHmm')"') do (
     set "dateraw=%%A"
+)
+if "!dateraw!"=="" (
+    echo.
+	echo ERROR: Failed to get file timestamp
+	echo.
+    goto ENDPAUSE
+)
 
 set "datepretty=!dateraw:~0,4!-!dateraw:~4,2!-!dateraw:~6,2!-!dateraw:~8,4!"
-set "time_stamped_filename=%fname_base%_%datepretty% RO.%fname_ext%"
+set "time_stamped_filename=%fname_base%_%datepretty% %BACKUP_SUFFIX%.%fname_ext%"
 
 REM ----- If the file has already been backed up, issue warning notice. Otherwise create timestamped file version. -----
 if not exist "%target_dir%%time_stamped_filename%" (
-	copy "%source_dir%%fname%" "%target_dir%%time_stamped_filename%" | find "SILENT"
+	copy "%source_dir%%fname%" "%target_dir%%time_stamped_filename%" >nul 2>&1
+	if errorlevel 1 (
+    	echo.
+		echo ERROR: Failed to copy file "%source_dir%%fname%" to archive directory "%target_dir%%time_stamped_filename%"
+    	echo.
+    	goto ENDPAUSE
+	)	
 	attrib +r "%target_dir%%time_stamped_filename%"
+	if errorlevel 1 (
+	    echo.
+    	echo WARNING: Failed to set read-only attribute on backup file "%target_dir%%time_stamped_filename%"
+		echo          Operation will continue after pause...
+		echo.
+		pause 
+	)	
+
+
 ) else (
 	echo.
 	echo *****************************************************************************
@@ -112,7 +155,7 @@ if not exist "%target_dir%%time_stamped_filename%" (
 ) else (
 	echo.
 	echo *********************************************************************
-	echo *** SUCCESS: Created backup file with timestamp "%datepretty%" ***
+	echo *** SUCCESS: Created backup file: "%time_stamped_filename%" ***
 	echo *********************************************************************
 	echo.
 	del "%target_dir%%fname%"
