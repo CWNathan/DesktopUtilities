@@ -6,7 +6,7 @@ goto START
 *
 *  Source Repository (GitHub):  CWNathan\DesktopUtilities
 *  Filepath and name: \FileSystemUtilities\archive_local_COPY AND EDIT.bat
-*  Version: 2024-10-01
+*  Version: 2025-10-01
 *
 *  When configured for a specific file, this utility copies the file to a subdirectory in the
 *  directory named "Arc" and then adds a timestamp suffix to the file name.
@@ -53,35 +53,23 @@ if "%fname_ext%"=="[ENTER FILE EXTENSION HERE]" (goto ERROR_SETUP_REQUIRED)
 REM ----- Verify that the target file exists
 if not exist "%source_dir%%fname%" (goto ERROR_SOURCE_NOT_FOUND)
 
-REM Next line replaces all backslash characters "\" with escaped backslash characters "\\"
-set "target_dir_esc=%target_dir:\=\\%"
-
 REM ----- Make the archive directory if it does not already exist.  -----
-
 if not exist "%target_dir%" (
 	echo Directory "%target_dir%" does not exist. Creating it now...
 	mkdir "%target_dir%"
 )
 
-REM ----- Verify copy the file to the archive directory. Get timestamp info. -----
-
+REM ----- Verify copy the file to the archive directory. -----
 copy "%source_dir%%fname%" "%target_dir%%fname%" /V | find "SILENT"
 
-for /f "tokens=1,2 delims==" %%A in ('wmic datafile where "name='%target_dir_esc%%fname%'" get LastModified
-/format:list ^| findstr "="') do (
-set "junk1=%%A"
-    set "timestamplong=%%B"
-)
-
-for /f "tokens=1,2 delims=." %%A in ("%timestamplong%") do (
-set "dateraw=%%A"
-    set "junk2=%%B"
-)
+REM ----- Use PowerShell to get the file's last modified timestamp (Windows 11 compatible replacement for WMIC) -----
+for /f "delims=" %%A in ('powershell -Command "(Get-Item '%target_dir%%fname%').LastWriteTime.ToString('yyyyMMddHHmm')"') do (
+    set "dateraw=%%A"
 
 set "datepretty=!dateraw:~0,4!-!dateraw:~4,2!-!dateraw:~6,2!-!dateraw:~8,4!"
 set "time_stamped_filename=%fname_base%_%datepretty% RO.%fname_ext%"
 
-REM ----- If the file has already been backed up, issue wraning notice. Otherwise create timestamped file version.		
+REM ----- If the file has already been backed up, issue warning notice. Otherwise create timestamped file version. -----
 if not exist "%target_dir%%time_stamped_filename%" (
 	copy "%source_dir%%fname%" "%target_dir%%time_stamped_filename%" | find "SILENT"
 	attrib +r "%target_dir%%time_stamped_filename%"
@@ -103,8 +91,8 @@ if not exist "%target_dir%%time_stamped_filename%" (
 	dir "%source_dir%%fname%" | find "%fname_base%"
 	dir "%target_dir%%time_stamped_filename%" | find "%fname_base%"
 	echo.
-	pause
-	goto END
+
+	goto ENDSLOW
 )
 
 REM ----- Verify the timestamped version exists. 
@@ -134,8 +122,7 @@ dir "%target_dir%" | find "Directory"
 echo.
 dir "%target_dir%%fname_base%*" /od | find "%fname_base%"
 echo.
-pause
-goto END
+goto ENDSLOW
 
 :ERROR_SETUP_REQUIRED
 echo.
@@ -149,7 +136,7 @@ echo *
 echo *****************************************************************************
 echo.
 pause
-goto END
+goto ENDPAUSE
 
 :ERROR_SOURCE_NOT_FOUND
 dir /od /a-d-s
@@ -162,8 +149,15 @@ echo *   File "%fname_base%.%fname_ext%" not found here (see directory listing a
 echo *
 echo ************************************************************************************
 echo.
-pause
-goto END
+goto ENDPAUSE
 
-:END
-endlocal
+:ENDSLOW
+timeout /T 5
+exit
+
+:ENDPAUSE
+pause
+exit
+
+:ENDFAST
+exit
